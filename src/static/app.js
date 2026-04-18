@@ -24,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
-  const SCHOOL_NAME = document.querySelector("header h1")?.textContent;
   const SHARE_COPIED_MESSAGE =
     "Share details copied. You can now paste and send it.";
 
@@ -380,6 +379,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Build share message content for an activity
+  function getSchoolName() {
+    return document.querySelector("header h1")?.textContent || "our school";
+  }
+
+  // Build share message content for an activity
   function buildShareContent(activityName, details, formattedSchedule) {
     const description = details.description || "Check out this activity!";
     const shareUrl = `${window.location.origin}${
@@ -388,9 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       shareTitle: `Check out ${activityName}`,
-      shareText: `${activityName} at ${
-        SCHOOL_NAME || "our school"
-      }\n${description}\nSchedule: ${formattedSchedule}`,
+      shareText: `${activityName} at ${getSchoolName()}\n${description}\nSchedule: ${formattedSchedule}`,
       shareUrl,
     };
   }
@@ -408,11 +410,14 @@ document.addEventListener("DOMContentLoaded", () => {
     textArea.style.position = "absolute";
     textArea.style.left = "-9999px";
     document.body.appendChild(textArea);
-    textArea.select();
-    // This deprecated API is intentionally used as a legacy fallback
-    // for older browsers that do not support navigator.clipboard.
-    document.execCommand("copy");
-    document.body.removeChild(textArea);
+    try {
+      textArea.select();
+      // This deprecated API is intentionally used as a legacy fallback
+      // for older browsers that do not support navigator.clipboard.
+      document.execCommand("copy");
+    } finally {
+      document.body.removeChild(textArea);
+    }
   }
 
   // Share activity details with native share dialog or clipboard fallback
