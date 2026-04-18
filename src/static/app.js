@@ -24,6 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
+  const SHARE_COPIED_MESSAGE =
+    "Share details copied. You can now paste and send it.";
 
   // Activity categories with corresponding colors
   const activityTypes = {
@@ -64,6 +66,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeTimeFilter) {
       currentTimeRange = activeTimeFilter.dataset.time;
     }
+  }
+
+  // Initialize search from a shared activity link
+  function initializeSharedActivitySearch() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedActivity = params.get("activity");
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    searchQuery = sharedActivity;
+    searchInput.value = sharedActivity;
   }
 
   // Function to set day filter
@@ -366,7 +381,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Build share message content for an activity
   function buildShareContent(activityName, details, formattedSchedule) {
     const description = details.description || "Check out this activity!";
-    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const shareUrl = `${window.location.origin}${
+      window.location.pathname
+    }?activity=${encodeURIComponent(activityName)}`;
 
     return {
       shareTitle: `Check out ${activityName}`,
@@ -413,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       await copyTextToClipboard(`${shareText}\n${shareUrl}`);
-      showMessage("Share details copied. You can now paste and send it.", "info");
+      showMessage(SHARE_COPIED_MESSAGE, "info");
     } catch (error) {
       if (error.name === "AbortError") {
         return;
@@ -421,10 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         await copyTextToClipboard(`${shareText}\n${shareUrl}`);
-        showMessage(
-          "Share details copied. You can now paste and send it.",
-          "info"
-        );
+        showMessage(SHARE_COPIED_MESSAGE, "info");
       } catch (copyError) {
         showMessage("Unable to share this activity right now.", "error");
         console.error("Error sharing activity:", copyError);
@@ -945,6 +959,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
+  initializeSharedActivitySearch();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
