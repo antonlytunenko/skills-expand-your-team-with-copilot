@@ -24,8 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
-  const SCHOOL_NAME =
-    document.querySelector("header h1")?.textContent || "Mergington High School";
+  const SCHOOL_NAME = document.querySelector("header h1")?.textContent;
   const SHARE_COPIED_MESSAGE =
     "Share details copied. You can now paste and send it.";
 
@@ -389,7 +388,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       shareTitle: `Check out ${activityName}`,
-      shareText: `${activityName} at ${SCHOOL_NAME}\n${description}\nSchedule: ${formattedSchedule}`,
+      shareText: `${activityName} at ${
+        SCHOOL_NAME || "our school"
+      }\n${description}\nSchedule: ${formattedSchedule}`,
       shareUrl,
     };
   }
@@ -408,7 +409,8 @@ document.addEventListener("DOMContentLoaded", () => {
     textArea.style.left = "-9999px";
     document.body.appendChild(textArea);
     textArea.select();
-    // Legacy fallback for browsers without navigator.clipboard support.
+    // This deprecated API is intentionally used as a legacy fallback
+    // for older browsers that do not support navigator.clipboard.
     document.execCommand("copy");
     document.body.removeChild(textArea);
   }
@@ -444,7 +446,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showMessage(SHARE_COPIED_MESSAGE, "info");
       } catch (copyError) {
         showMessage("Unable to share this activity right now.", "error");
-        console.error("Error sharing activity.");
+        console.error("Error sharing activity:", copyError?.name || "Unknown");
       }
     }
   }
