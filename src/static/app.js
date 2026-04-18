@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
+  const SCHOOL_NAME = "Mergington High School";
   const SHARE_COPIED_MESSAGE =
     "Share details copied. You can now paste and send it.";
 
@@ -387,7 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       shareTitle: `Check out ${activityName}`,
-      shareText: `${activityName} at Mergington High School\n${description}\nSchedule: ${formattedSchedule}`,
+      shareText: `${activityName} at ${SCHOOL_NAME}\n${description}\nSchedule: ${formattedSchedule}`,
       shareUrl,
     };
   }
@@ -441,7 +442,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showMessage(SHARE_COPIED_MESSAGE, "info");
       } catch (copyError) {
         showMessage("Unable to share this activity right now.", "error");
-        console.error("Error sharing activity:", copyError);
+        console.error("Error sharing activity.");
       }
     }
   }
