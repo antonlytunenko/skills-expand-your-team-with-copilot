@@ -363,6 +363,75 @@ document.addEventListener("DOMContentLoaded", () => {
     return "academic";
   }
 
+  // Build share message content for an activity
+  function buildShareContent(activityName, details, formattedSchedule) {
+    const description = details.description || "Check out this activity!";
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+
+    return {
+      shareTitle: `Check out ${activityName}`,
+      shareText: `${activityName} at Mergington High School\n${description}\nSchedule: ${formattedSchedule}`,
+      shareUrl,
+    };
+  }
+
+  // Copy text with modern clipboard support and a simple fallback
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
+
+  // Share activity details with native share dialog or clipboard fallback
+  async function shareActivity(activityName, details, formattedSchedule) {
+    const { shareTitle, shareText, shareUrl } = buildShareContent(
+      activityName,
+      details,
+      formattedSchedule
+    );
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        showMessage("Activity details shared.", "success");
+        return;
+      }
+
+      await copyTextToClipboard(`${shareText}\n${shareUrl}`);
+      showMessage("Share details copied. You can now paste and send it.", "info");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return;
+      }
+
+      try {
+        await copyTextToClipboard(`${shareText}\n${shareUrl}`);
+        showMessage(
+          "Share details copied. You can now paste and send it.",
+          "info"
+        );
+      } catch (copyError) {
+        showMessage("Unable to share this activity right now.", "error");
+        console.error("Error sharing activity:", copyError);
+      }
+    }
+  }
+
   // Function to fetch activities from API with optional day and time filters
   async function fetchActivities() {
     // Show loading skeletons first
@@ -561,11 +630,17 @@ document.addEventListener("DOMContentLoaded", () => {
               }>
             ${isFull ? "Activity Full" : "Register Student"}
           </button>
+          <button class="share-button" data-activity="${name}">
+            Share Activity
+          </button>
         `
             : `
           <div class="auth-notice">
             Teachers can register students.
           </div>
+          <button class="share-button" data-activity="${name}">
+            Share Activity
+          </button>
         `
         }
       </div>
@@ -585,6 +660,14 @@ document.addEventListener("DOMContentLoaded", () => {
           openRegistrationModal(name);
         });
       }
+    }
+
+    // Add click handler for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    if (shareButton) {
+      shareButton.addEventListener("click", () => {
+        shareActivity(name, details, formattedSchedule);
+      });
     }
 
     activitiesList.appendChild(activityCard);
