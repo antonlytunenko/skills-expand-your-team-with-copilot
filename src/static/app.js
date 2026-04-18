@@ -24,7 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
-  const SCHOOL_NAME = "Mergington High School";
+  const SCHOOL_NAME =
+    document.querySelector("header h1")?.textContent || "Mergington High School";
   const SHARE_COPIED_MESSAGE =
     "Share details copied. You can now paste and send it.";
 
@@ -407,6 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
     textArea.style.left = "-9999px";
     document.body.appendChild(textArea);
     textArea.select();
+    // Legacy fallback for browsers without navigator.clipboard support.
     document.execCommand("copy");
     document.body.removeChild(textArea);
   }
