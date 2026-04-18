@@ -24,6 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
+  const SHARE_COPIED_MESSAGE =
+    "Share details copied. You can now paste and send it.";
 
   // Activity categories with corresponding colors
   const activityTypes = {
@@ -64,6 +66,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeTimeFilter) {
       currentTimeRange = activeTimeFilter.dataset.time;
     }
+  }
+
+  // Initialize search from a shared activity link
+  function initializeSharedActivitySearch() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedActivity = params.get("activity");
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    searchQuery = sharedActivity;
+    searchInput.value = sharedActivity;
   }
 
   // Function to set day filter
@@ -363,6 +378,84 @@ document.addEventListener("DOMContentLoaded", () => {
     return "academic";
   }
 
+  // Build share message content for an activity
+  function getSchoolName() {
+    return document.querySelector("header h1")?.textContent || "our school";
+  }
+
+  // Build share message content for an activity
+  function buildShareContent(activityName, details, formattedSchedule) {
+    const description = details.description || "Check out this activity!";
+    const shareUrl = `${window.location.origin}${
+      window.location.pathname
+    }?activity=${encodeURIComponent(activityName)}`;
+
+    return {
+      shareTitle: `Check out ${activityName}`,
+      shareText: `${activityName} at ${getSchoolName()}\n${description}\nSchedule: ${formattedSchedule}`,
+      shareUrl,
+    };
+  }
+
+  // Copy text with modern clipboard support and a simple fallback
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    try {
+      textArea.select();
+      // This deprecated API is intentionally used as a legacy fallback
+      // for older browsers that do not support navigator.clipboard.
+      document.execCommand("copy");
+    } finally {
+      document.body.removeChild(textArea);
+    }
+  }
+
+  // Share activity details with native share dialog or clipboard fallback
+  async function shareActivity(activityName, details, formattedSchedule) {
+    const { shareTitle, shareText, shareUrl } = buildShareContent(
+      activityName,
+      details,
+      formattedSchedule
+    );
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        showMessage("Activity details shared.", "success");
+        return;
+      }
+
+      await copyTextToClipboard(`${shareText}\n${shareUrl}`);
+      showMessage(SHARE_COPIED_MESSAGE, "info");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return;
+      }
+
+      try {
+        await copyTextToClipboard(`${shareText}\n${shareUrl}`);
+        showMessage(SHARE_COPIED_MESSAGE, "info");
+      } catch (copyError) {
+        showMessage("Unable to share this activity right now.", "error");
+        console.error("Error sharing activity:", copyError?.name || "Unknown");
+      }
+    }
+  }
+
   // Function to fetch activities from API with optional day and time filters
   async function fetchActivities() {
     // Show loading skeletons first
@@ -561,11 +654,17 @@ document.addEventListener("DOMContentLoaded", () => {
               }>
             ${isFull ? "Activity Full" : "Register Student"}
           </button>
+          <button class="share-button" data-activity="${name}">
+            Share Activity
+          </button>
         `
             : `
           <div class="auth-notice">
             Teachers can register students.
           </div>
+          <button class="share-button" data-activity="${name}">
+            Share Activity
+          </button>
         `
         }
       </div>
@@ -585,6 +684,14 @@ document.addEventListener("DOMContentLoaded", () => {
           openRegistrationModal(name);
         });
       }
+    }
+
+    // Add click handler for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    if (shareButton) {
+      shareButton.addEventListener("click", () => {
+        shareActivity(name, details, formattedSchedule);
+      });
     }
 
     activitiesList.appendChild(activityCard);
@@ -862,6 +969,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
+  initializeSharedActivitySearch();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
